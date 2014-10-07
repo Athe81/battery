@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -101,7 +102,7 @@ func (b *Battery) State() (capacity int, isCharging bool, err error) {
 	if err != nil {
 		return
 	}
-	isCharging = (status == "Charging")
+	isCharging = (strings.ToLower(status) == "charging")
 	b.energyFull, err = readFileInt(b.energyFullPath)
 	if err != nil {
 		return
