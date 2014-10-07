@@ -21,11 +21,10 @@ type Watch struct {
 
 type Battery struct {
 	battery        string
+	capacityPath   string
 	energyFullPath string
 	energyNowPath  string
 	chargingPath   string
-	energyFull     int
-	energyNow      int
 }
 
 func main() {
@@ -91,6 +90,7 @@ func readFileString(path string) (c string, err error) {
 
 func newBattery(sysPath string, battery string) (b Battery, err error) {
 	b.battery = battery
+	b.capacityPath = fmt.Sprintf("%s%s%s", sysPath, battery, "/capacity")
 	b.energyFullPath = fmt.Sprintf("%s%s%s", sysPath, battery, "/energy_full")
 	b.energyNowPath = fmt.Sprintf("%s%s%s", sysPath, battery, "/energy_now")
 	b.chargingPath = fmt.Sprintf("%s%s%s", sysPath, battery, "/status")
@@ -103,15 +103,20 @@ func (b *Battery) State() (capacity int, isCharging bool, err error) {
 		return
 	}
 	isCharging = (strings.ToLower(status) == "charging")
-	b.energyFull, err = readFileInt(b.energyFullPath)
+	// Return if capacity could read without error. Try with energy_full / energy_now if not.
+	capacity, err = readFileInt(b.capacityPath)
+	if err == nil {
+		return
+	}
+	energyFull, err := readFileInt(b.energyFullPath)
 	if err != nil {
 		return
 	}
-	b.energyNow, err = readFileInt(b.energyNowPath)
+	energyNow, err := readFileInt(b.energyNowPath)
 	if err != nil {
 		return
 	}
-	capacity = b.energyNow * 100 / b.energyFull
+	capacity = energyNow * 100 / energyFull
 	return
 }
 
